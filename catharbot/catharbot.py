@@ -1,9 +1,45 @@
 from olclient.openlibrary import OpenLibrary
 import json
 import olid
-#ol = OpenLibrary()
 
 DEBUG=True
+
+def ol_value_stringify(val):
+    """
+    Converts an OL json value to a string, regardless its type.
+    borrowed from cdrini's jupyter notebook
+    """
+    if type(val) in [str, unicode]:
+        return val
+    elif type(val) in [int]:
+        return str(val)
+    elif isinstance(val, list):
+        return "; ".join(map(ol_value_stringify, val))
+    elif isinstance(val, dict):
+        if val.keys() == ['key']:
+            return extract_olid(val['key'])
+        elif 'type' in val:
+            if val['type'] == '/type/datetime':
+                return val['value']
+            # Why can both of these happen?
+            elif (
+                val['type'] == '/type/author_role'
+                or val['type']['key'] == '/type/author_role' # This is the latest style
+            ):
+                return extract_olid(val['author']['key'])
+            elif val['type']['key'] == '/type/link':
+                return val['url']
+            else:
+                raise Exception("Cannot stringify dict with 'type' '%s'" % str(val))
+        else:
+            return str(val) # catch all?? is this safe?
+            # raise Exception("Cannot stringify dict '%s'" % str(val))
+    else: raise Exception("Cannot stringify value '%s'" % str(val))
+
+def extract_olid(olid):
+    """Convert a string like '/authors/OL1412764A' to just 'OL1412764A'"""
+    return olid.split('/')[-1]
+
 
 class CatharBot(OpenLibrary):
 
@@ -90,4 +126,121 @@ class CatharBot(OpenLibrary):
 
     def load_doc(self, id):
         return self.session.get(olid.full_url(id)).json()
+
+
+    def merge_unique_lists(self, lists, hash_fn=None):
+        """
+        Combine unique lists into a new unique list. Preserves ordering.
+        """
+        result = []
+        seen = set()
+        for lst in lists:
+            for el in lst:
+                hsh = hash_fn(el) if hash_fn else el
+                if hsh not in seen:
+                    result.append(el)
+                    seen.add(hsh)
+        return result
+
+    def merge_into_work(self, master, dupes):
+        """
+        Returns a new dict which is the merge of the provided works.
+        """
+
+        def merge(key, works):
+            """
+            Returns the result of merging the values of the keys from all the provided works. Gives
+            preference to the first item in the list where appropriate.
+            """
+            # Keys whose value is a unique list
+            UNIQUE_COMBINABLE_KEYS = {
+                'authors',
+                'covers',
+                'links',
+                'subject_people',
+                'subject_times',
+                'subject_places',
+                'subjects',
+                'lc_classifications',
+                'dewey_number',
+            # EDITIONS
+                'contributors', # EDITIONS
+                'publishers',   # downcase and strip punctuation???
+                'isbn_10',
+                'isbn_13',
+
+            }
+            COMBINABLE_DICTS = {
+                'identifiers',     # EDITIONS
+                'classifications', # EDITIONS
+
+            }
+            # Keys whose value is an item which should be chosen by order in the list
+            PRECEDENCE_KEYS = {
+                'type',
+                'title',
+                'description',
+                'subtitle',
+                'id',
+                'first_publish_date', # Should technically be aggregated using min.
+              # EDITION KEYS
+                'table_of_contents', # Complex!
+                'ocaid',
+                'weight',
+                'number_of_pages',
+                'pagination',
+                'physical_format',
+                'publish_places',  # Could be combinable?
+                'publish_date',  #  should pick the most specific valid date format
+                'copyright_date',
+                'works',
+
+            }
+            # Readonly keys; always take from master
+            READONLY_KEYS = {
+                'created',
+                'key',
+                'last_modified',
+                'latest_revision',
+                'revision'
+            }
+
+            WARNING_KEYS = { 'id' }
+
+            if key in WARNING_KEYS:
+                print("WARNING: Encountered the field '%s'" % key)
+
+            if key in UNIQUE_COMBINABLE_KEYS:
+                return self.merge_unique_lists([w.get(key, []) for w in works], hash_fn=ol_value_stringify)
+            elif key in COMBINABLE_DICTS:
+                merged = {}
+                docs = works # naming! this is used for editions
+                for d in docs:
+                    if key not in d:
+                        continue
+                    for sub_key, lst in d[key].items():
+                        for item in lst:
+                            if item in merged.setdefault(sub_key, []):
+                                continue
+                            merged[sub_key].append(item)
+                return merged
+
+            #    return { k: self.merge_unique_lists(w.get(key, {}) for w in works], hash_fn=ol_value_stringify)
+            elif key in READONLY_KEYS:
+                return works[0][key]
+            elif key in PRECEDENCE_KEYS:
+                # Get the value of the first work that has the key. Master if possible,
+                # but take the value from another work if not.
+                for w in works:
+                    if key in w:
+                        return w[key]
+            else:
+                raise Exception("Cannot handle key '%s'" % key)
+
+        works = [master] + dupes
+
+        # all the keys we will have to merge
+        keys = { key for work in works for key,val in work.iteritems() }
+
+        return { key: merge(key, works) for key in keys }
 
