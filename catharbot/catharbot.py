@@ -10,7 +10,7 @@ def ol_value_stringify(val):
     borrowed from cdrini's jupyter notebook
     """
     if type(val) in [str, unicode]:
-        return val
+        return val.strip()
     elif type(val) in [int]:
         return str(val)
     elif isinstance(val, list):
