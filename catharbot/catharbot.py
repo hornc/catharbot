@@ -73,13 +73,13 @@ class CatharBot(OpenLibrary):
             for e in editions:
                 docs.append(self.get_move_edition(e, master))
             docs.append(self.get_redirect(w, master))
-        return self.save_many(docs, "Merged duplicate works")
+        return docs
 
     def merge_editions(self, duplicate_editions, master):
         docs = []
         for e in duplicate_editions:
             docs.append(self.get_redirect(e, master))
-        return self.save_many(docs, "Merged duplicate editions")
+        return docs
 
     def delete_list(self, ids, comment):
         docs = []
