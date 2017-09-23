@@ -168,6 +168,14 @@ class CatharBot(OpenLibrary):
                 'publishers',   # downcase and strip punctuation???
                 'isbn_10',
                 'isbn_13',
+                'lccn',
+                'oclc_numbers',
+                'ia_box_id',
+                'source_records',
+                'series',
+                'languages',
+                'dewey_decimal_class',
+                'other_titles',
 
             }
             COMBINABLE_DICTS = {
@@ -190,10 +198,16 @@ class CatharBot(OpenLibrary):
                 'number_of_pages',
                 'pagination',
                 'physical_format',
+                'publishers', # could be combinable?
                 'publish_places',  # Could be combinable?
+                'publish_country',
                 'publish_date',  #  should pick the most specific valid date format
+                'by_statement',
                 'copyright_date',
                 'works',
+                'notes',
+                'edition_name',
+                'full_title',
 
             }
             # Readonly keys; always take from master
