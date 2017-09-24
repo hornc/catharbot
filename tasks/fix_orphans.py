@@ -7,12 +7,11 @@ import json
 import ast
 import re
 
-filename = sys.argv[1]
-
 """
 Input file format:
-
-{'key': '<ocaid>', 'olids': {'<olid work>': ['<olid edition>', ... ], '<olid work': ... }}
+Takes a filtered OL editions dump file as input
+Usage:
+   ./fix_orphans.py <filename> <start> <records>
 """
 
 def count_works(row):
@@ -50,10 +49,10 @@ def skippable(doc):
     if doc['type']['key'] in ['/type/delete', '/type/redirect']:
         return True
     else:
-        return False 
+        return False
 
 def merge_subjects(a, b):
-    # take into account ALL subject fields (people, places &c)
+    # TODO: take into account ALL subject fields (people, places &c)
     subjects = []
     if 'subjects' in a:
         subjects = a['subjects']
@@ -62,7 +61,6 @@ def merge_subjects(a, b):
     subjects = set(subjects)
     print "Subjects: %s" % subjects
     return subjects 
-
 
 def normalise(doc):
     doc.pop('key')
@@ -87,7 +85,6 @@ def create_work_for(id):
     ed = bot.load_doc(id)
     ed['_comment'] = "create work for edition"
     return bot.session.post(url + '/edit', ed)
-
 
 def add_subjects_to_work(subjects, w):
     mapping = {
@@ -132,7 +129,6 @@ def create_work_from_edition(edition):
     # return the work OLID
     return re.search(r'OL\d+W', r.content).group()
 
-
 def is_early_import(data):
     if data['revision'] > 3:
         return False
@@ -156,23 +152,25 @@ def update_row(row):
     row['olids'] = output
     return row 
 
-# ../in_library_orphans2.txt 
+MAKE_CHANGES = False
 
-start_line = 11
-end_line = 20000 
+if __name__ == '__main__':
+    # ../in_library_orphans2.txt
+    filename   = sys.argv[1]
+    start_line = sys.argv[2]
+    records    = sys.argv[3]
 
+    bot = catharbot.CatharBot()
+    with open(filename, 'r') as infile:
+        last_id = None
+        group   = {}
+        for i, line in enumerate(infile):
+            if i > (start_line + records):
+                break
+            if i < start_line:
+                continue
 
-MAKE_CHANGES = True
-
-bot = catharbot.CatharBot()
-with open(filename, 'r') as infile: 
-    last_id = None
-    group   = {}
-    for i, line in enumerate(infile): 
-        if end_line != 0 and i > end_line: 
-            break 
-        if i >= start_line:
-            cols = line.split("\t") 
+            cols = line.split("\t")
             olid = cols[1].replace('/books/', '')
             edition_data = json.loads(cols[4])
             ocaid = edition_data['ocaid']
@@ -181,11 +179,11 @@ with open(filename, 'r') as infile:
             live_edition = bot.load_doc(olid)
             if skippable(live_edition) or 'works' in live_edition:
                 print "%s\t%s" % (ocaid, live_edition['works'][0]['key'].replace('/works/', ''))
-                
+
             else:
-                work_olid = create_work_from_edition(live_edition)
-                updated_ed =  bot.get_move_edition(olid, work_olid)
+                work_olid  = create_work_from_edition(live_edition)
+                updated_ed = bot.get_move_edition(olid, work_olid)
                 if MAKE_CHANGES:
                     bot.save_one(updated_ed, "associate with work")
                 print "%s\t%s" % (ocaid, work_olid)
-         
+
