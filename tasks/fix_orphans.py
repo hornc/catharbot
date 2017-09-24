@@ -157,8 +157,8 @@ MAKE_CHANGES = False
 if __name__ == '__main__':
     # ../in_library_orphans2.txt
     filename   = sys.argv[1]
-    start_line = sys.argv[2]
-    records    = sys.argv[3]
+    start_line = int(sys.argv[2])
+    records    = int(sys.argv[3])
 
     bot = catharbot.CatharBot()
     with open(filename, 'r') as infile:

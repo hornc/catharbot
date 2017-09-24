@@ -1,18 +1,18 @@
 #!/usr/bin/python
 
-import catharbot
-import olid
+from catharbot import catharbot, olid
 import sys
 import json
 import ast
 import re
 
-filename = sys.argv[1]
-
 """
 Input file format:
 
 {'key': '<ocaid>', 'olids': {'<olid work>': ['<olid edition>', ... ], '<olid work': ... }}
+
+Usage:
+    ./process_dupes.py <filename> <start_line> <records_to_process>
 """
 
 def count_works(row):
@@ -85,7 +85,6 @@ def merge_subjects(a, b):
     print "Subjects: %s" % subjects
     return subjects 
 
-
 def normalise(doc):
     doc.pop('key')
     if 'works' in doc:
@@ -147,24 +146,31 @@ def update_row(row):
 
 # orphan_dupes.txt
 
-start_line = 3790
-end_line = 4060
+MAKE_CHANGES = False
 
+if __name__ == '__main__':
 
-MAKE_CHANGES = True
+    CREATE_NEW   = False
 
-bot = catharbot.CatharBot()
-with open(filename, 'r') as infile: 
-    last_id = None
-    group   = {}
-    for i, line in enumerate(infile): 
-        if end_line != 0 and i > end_line: 
-            break 
-        if i >= start_line:
+    filename = sys.argv[1]
+    start   = int(sys.argv[2])
+    records = int(sys.argv[3])
+
+    bot = catharbot.CatharBot()
+
+    with open(filename, 'r') as infile:
+        last_id = None
+        group   = {}
+        for i, line in enumerate(infile):
+            if i < start:
+                continue
+            if i > (start + records):
+                break
+
             row = ast.literal_eval(line)
             if 'status' in row and row['status'] == 'done':
                 continue
-             
+
             # is row a simple 2 edition row?
             #if count_editions(row) == 2 and count_works(row) == 2:
             #    print row
@@ -179,7 +185,7 @@ with open(filename, 'r') as infile:
             if count_works(row) <= 2:
                 if len(orphans) == 0:
                     row['status'] = 'done'
-                    print "FOUND A DONE ROW! %i" % i
+                    print "FOUND A DONE ROW (no orphans)! %i" % i
                 else:
                     print "\n  Orphans found: %s" % [ed['key'] for ed in orphans]
                     if len(orphans) == 2:
@@ -224,6 +230,5 @@ with open(filename, 'r') as infile:
                   print "  Merge down to one work"
                   # merge down works to one work, 1st work is master
                   # write changes to works + editions
-                  
-            print row
 
+            print row
