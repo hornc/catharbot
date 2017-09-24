@@ -4,6 +4,14 @@ import catharbot
 import json
 import re
 
+"""
+Takes input fileformat:
+<ocaid> <olid> <work_olid>
+e.g.
+1000motsillustr00blan OL24638899M OL15718932W
+
+"""
+
 dupe_list = "../ocaid_dupes.txt"
 filename = dupe_list
 
