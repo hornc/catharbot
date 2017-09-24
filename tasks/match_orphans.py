@@ -2,8 +2,12 @@
 
 """
 Script to correct Orphaned Editions with OCAIDs.
+Takes a filtered OL editions dump file as input
 
-Edition's unique identifiers are used to search for existing works, and associated.
+Usage:
+   ./match_orphans.py <filename> <start_line> <number_records_to_process>
+
+Edition's unique identifiers are used to search for existing works, and associate.
 If no existing works are found, and new work is created for the edition.
 
 Unique identifiers used for searching: ISBN, LCCN, OCLC numbers 
@@ -100,14 +104,12 @@ def get_live_edition(olid):
 if __name__ == '__main__':
    MAKE_CHANGES = True 
    CREATE_NEW   = False
-   # takes a OL editions dump file, filteredi by line, as input
+   # takes a filtered OL editions dump file as input
    filename = sys.argv[1]
 
    # input file line number to start from and number of records to process
    start   = int(sys.argv[2])
    records = int(sys.argv[3])
-   #start   = 119
-   #records = 10 
 
    bot = catharbot.CatharBot()
 
