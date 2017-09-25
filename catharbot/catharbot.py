@@ -228,7 +228,6 @@ class CatharBot(OpenLibrary):
                 'pagination',
                 'physical_format',
                 'physical_dimensions',
-                'publishers', # could be combinable?
                 'publish_places',  # Could be combinable?
                 'publish_country',
                 'publish_date',  #  should pick the most specific valid date format
