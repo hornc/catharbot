@@ -2,7 +2,7 @@ from olclient.openlibrary import OpenLibrary
 import json
 import olid
 
-DEBUG=True
+DEBUG=False
 
 def ol_value_stringify(val):
     """
@@ -18,6 +18,8 @@ def ol_value_stringify(val):
     elif isinstance(val, dict):
         if val.keys() == ['key']:
             return extract_olid(val['key'])
+        elif 'url' in val:
+            return val['url']
         elif 'type' in val:
             if val['type'] == '/type/datetime':
                 return val['value']
@@ -125,13 +127,25 @@ class CatharBot(OpenLibrary):
         return data 
 
     def load_doc(self, id):
-        return self.session.get(olid.full_url(id)).json()
+        doc = self.session.get(olid.full_url(id)).json()
+        if 'uri_descriptions' in doc:
+            doc = self.fix_links(doc)
+            # TODO: change 'subject_place' on editions to 'subject_places'?
+        return doc
 
+    def fix_links(self, doc):
+        uris = self.merge_unique_lists([doc.get('url', []), doc.get('uris', [])])
+        links = doc.get('links', [])
+        for i,uri in enumerate(uris):
+            links.append({'url': uri, 'title': doc['uri_descriptions'][i]})
+        doc.pop('uri_descriptions')
+        doc.pop('url')
+        doc.pop('uris')
+        doc['links'] = self.merge_unique_lists([links], )
+        return doc
 
     def merge_unique_lists(self, lists, hash_fn=None):
-        """
-        Combine unique lists into a new unique list. Preserves ordering.
-        """
+        """ Combine unique lists into a new unique list. Preserves ordering."""
         result = []
         seen = set()
         for lst in lists:
@@ -141,6 +155,19 @@ class CatharBot(OpenLibrary):
                     result.append(el)
                     seen.add(hsh)
         return result
+
+    def merge_unique_dicts(self, key, docs):
+        """ Combine unique dictionaries into a new unique dict."""
+        merged = {}
+        for d in docs:
+            if key not in d:
+                continue
+            for sub_key, lst in d[key].items():
+                for item in lst:
+                    if item in merged.setdefault(sub_key, []):
+                        continue
+                    merged[sub_key].append(item)
+        return merged
 
     def merge_into_work(self, master, dupes):
         """
@@ -165,6 +192,8 @@ class CatharBot(OpenLibrary):
                 'dewey_number',
             # EDITIONS
                 'contributors', # EDITIONS
+                'contributions',
+                'genres',
                 'publishers',   # downcase and strip punctuation???
                 'isbn_10',
                 'isbn_13',
@@ -198,6 +227,7 @@ class CatharBot(OpenLibrary):
                 'number_of_pages',
                 'pagination',
                 'physical_format',
+                'physical_dimensions',
                 'publishers', # could be combinable?
                 'publish_places',  # Could be combinable?
                 'publish_country',
@@ -219,27 +249,12 @@ class CatharBot(OpenLibrary):
                 'revision'
             }
 
-            WARNING_KEYS = { 'id' }
-
-            if key in WARNING_KEYS:
-                print("WARNING: Encountered the field '%s'" % key)
-
             if key in UNIQUE_COMBINABLE_KEYS:
                 return self.merge_unique_lists([w.get(key, []) for w in works], hash_fn=ol_value_stringify)
             elif key in COMBINABLE_DICTS:
-                merged = {}
                 docs = works # naming! this is used for editions
-                for d in docs:
-                    if key not in d:
-                        continue
-                    for sub_key, lst in d[key].items():
-                        for item in lst:
-                            if item in merged.setdefault(sub_key, []):
-                                continue
-                            merged[sub_key].append(item)
-                return merged
+                return self.merge_unique_dicts(key, docs)
 
-            #    return { k: self.merge_unique_lists(w.get(key, {}) for w in works], hash_fn=ol_value_stringify)
             elif key in READONLY_KEYS:
                 return works[0][key]
             elif key in PRECEDENCE_KEYS:
