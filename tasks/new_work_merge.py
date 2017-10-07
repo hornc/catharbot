@@ -14,8 +14,18 @@ Usage:
 """
 
 def is_skippable(doc):
-    ''' Skip if the record has already been deleted or redirected.'''
+    """ Skip if the record has already been deleted or redirected."""
     return doc['type']['key'] in ['/type/delete', '/type/redirect']
+
+def update_ia_sync(bot, ocaid, master, dupe):
+    """ Update IA sync endpoint with the lendable edition after works have changed."""
+    editions = bot.get(master).editions
+    editions += bot.get(dupe).editions
+
+    for e in editions:
+        if 'ocaid' in e.json() and e.json()['ocaid'] == ocaid:
+            print "Update IA sync with %s" % e.olid
+            return bot.session.get(bot.base_url + "/admin/sync?edition_id=" + e.olid)
 
 
 MAKE_CHANGES = True 
@@ -36,6 +46,7 @@ if __name__ == '__main__':
                 break
 
             data = line.split("\t")
+            ocaid  = data[0]
             master = data[1].replace('/works/', '')
             dupe   = data[2].replace('/works/', '')
             title  = data[3]
@@ -57,3 +68,5 @@ if __name__ == '__main__':
             if MAKE_CHANGES:
                 bot.save_many(changes, msg)
 
+                # Update IA sync endpoint, after merging works
+                print update_ia_sync(bot, ocaid, master, dupe)
