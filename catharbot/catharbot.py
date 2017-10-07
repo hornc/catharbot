@@ -169,10 +169,19 @@ class CatharBot(OpenLibrary):
                     merged[sub_key].append(item)
         return merged
 
-    def merge_into_work(self, master, dupes):
+    def merge_docs(self, **kwargs):
+        """ Returns a new dict which is the merge of the provided docs (work or edition).
+        kwargs:
+            master: Master edition OLID (dict - required)
+          and one of
+            duplicate: Duplicate edtion OLID (dict)
+            duplicates: list of edition OLIDs ([dict])
         """
-        Returns a new dict which is the merge of the provided works.
-        """
+
+        master = kwargs['master']
+        duplicates = kwargs.setdefault('duplicates', [])
+        if 'duplicate' in kwargs:
+            duplicates.append(kwargs['duplicate'])
 
         def merge(key, works):
             """
@@ -183,6 +192,7 @@ class CatharBot(OpenLibrary):
             UNIQUE_COMBINABLE_KEYS = {
                 'authors',
                 'covers',
+                'excerpts',
                 'links',
                 'subject_people',
                 'subject_times',
@@ -220,6 +230,7 @@ class CatharBot(OpenLibrary):
                 'subtitle',
                 'id',
                 'first_publish_date', # Should technically be aggregated using min.
+                'first_sentence',
               # EDITION KEYS
                 'table_of_contents', # Complex!
                 'ocaid',
@@ -265,10 +276,10 @@ class CatharBot(OpenLibrary):
             else:
                 raise Exception("Cannot handle key '%s'" % key)
 
-        works = [master] + dupes
+        works = [master] + duplicates
 
         # all the keys we will have to merge
-        keys = { key for work in works for key,val in work.iteritems() }
+        keys = { key for work in works for key,val in work.items() }
 
         return { key: merge(key, works) for key in keys }
 
