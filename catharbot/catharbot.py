@@ -231,6 +231,7 @@ class CatharBot(OpenLibrary):
                 'id',
                 'first_publish_date', # Should technically be aggregated using min.
                 'first_sentence',
+                'number_of_editions',
               # EDITION KEYS
                 'table_of_contents', # Complex!
                 'ocaid',
