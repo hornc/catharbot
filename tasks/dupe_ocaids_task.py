@@ -1,14 +1,21 @@
 #!/usr/bin/python
 
-import catharbot
+from catharbot import catharbot
 import json
 import re
+
+"""
+Takes input fileformat:
+<ocaid> <olid> <work_olid>
+e.g.
+1000motsillustr00blan OL24638899M OL15718932W
+
+"""
 
 dupe_list = "../ocaid_dupes.txt"
 filename = dupe_list
 
 bot = catharbot.CatharBot()
-
 
 def is_skippable(doc):
     ''' Skip if the record has already been deleted, redirected
@@ -32,7 +39,7 @@ def extract_ids(line):
     return m.groups()
 
 def clear_invalid_ocaid(olid):
-    data = bot.load_doc(olid) 
+    data = bot.load_doc(olid)
     del data['ocaid']
     return bot.save_one(data, "remove invalid ia id")
 
@@ -83,8 +90,7 @@ def orphan_check(group):
              else:
                  print "  Associating %s with %s" % (e[0], works[0])
                  doc = bot.get_move_edition(e[0], works[0])
-                 print bot.save_one(doc, "Associate with work") 
-                
+                 print bot.save_one(doc, "Associate with work")
 
 def debug_group(group):
     output = ""
@@ -95,14 +101,14 @@ def debug_group(group):
     return "%s \n Editions %s\n Works %s" % (output, editions, works)
 
 start_line = 320
-end_line   = 900 
+end_line   = 900
 
-with open(filename, 'r') as infile: 
+with open(filename, 'r') as infile:
     last_id = None
     group   = []
-    for i, line in enumerate(infile): 
-        if i > end_line: 
-            break 
+    for i, line in enumerate(infile):
+        if i > end_line:
+            break
         if i >= start_line:
             ocaid, olid, work = extract_ids(line)
             if last_id and ocaid != last_id:
@@ -115,7 +121,6 @@ with open(filename, 'r') as infile:
                        print "Duplicate Editions only in group [%s]" % last_id
                    else:
                        # Group has duplicate works and editions
-          
                        print "%s: %s" % (last_id, group)
                        print "%i: %s" % (i, debug_group(group))
                        try:
@@ -128,9 +133,8 @@ with open(filename, 'r') as infile:
                 group = []
             #else:
             #    print "[%s] %s -> %s" % (ocaid, olid, work)
-            
+
             last_id = ocaid
-            data = bot.load_doc(olid) 
+            data = bot.load_doc(olid)
             if not is_skippable(data) and data['ocaid'] == ocaid:
                 group.append([olid, get_work(data)])
-
