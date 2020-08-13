@@ -1,4 +1,4 @@
-# iterate through archive.org items with onlt openlibrary
+# iterate through archive.org items with only openlibrary
 # and write back openlibrary_edition and openlibrary_work
 
 import json
