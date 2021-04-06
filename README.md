@@ -1,7 +1,8 @@
-# catharbot
-Open Library clean-up bot making use of the [openlibrary-client](https://github.com/internetarchive/openlibrary-client)
+# DEPRECATED: catharbot
 
-This is an experimental extension of the openlibrary-client, and hopefully some of its features will be moved back into the parent client as the prove successful.
+Now deprecated and is no longer supported. Most useful functionality has now been integrated into [Open Library](https://github.com/internetarchive/openlibrary) itself, or [openlibrary-client](https://github.com/internetarchive/openlibrary-client).
+
+This (was) an experimental extension of the openlibrary-client, and some of its features have been moved back into the parent client as they proved successful.
 
 Usage:
 
@@ -52,3 +53,16 @@ This does not check for external references and could leave things broken -- onl
 
 `bot.delete_list(["OL...1M, "OL...2M", "OL...3M"], "Comment explaining reason for deletion")`
 
+## License
+Catharbot (deprecated)
+Copyright © 2017-2020 Charles Horn.
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+[GNU General Public License](COPYING) for more details.
