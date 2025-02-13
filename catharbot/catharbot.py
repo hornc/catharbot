@@ -1,6 +1,6 @@
 from olclient.openlibrary import OpenLibrary
 import json
-import olid
+import catharbot.olid
 
 DEBUG=False
 
@@ -9,7 +9,7 @@ def ol_value_stringify(val):
     Converts an OL json value to a string, regardless its type.
     borrowed from cdrini's jupyter notebook
     """
-    if type(val) in [str, unicode]:
+    if isinstance(val, str):
         return val.strip()
     elif type(val) in [int]:
         return str(val)
@@ -47,7 +47,7 @@ class CatharBot(OpenLibrary):
 
     def get_editions_from_work(self, id):
         if DEBUG:
-            print id
+            print(id)
         editions = [e.olid for e in self.Work.get(id).editions]
         return editions
 

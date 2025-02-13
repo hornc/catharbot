@@ -24,7 +24,7 @@ class TestCatharbot:
         master = {'covers': [1], 'title': 'The Work'}
         b = {'title': 'the work', 'covers': [2 , 3, 4]}
 
-        result = bot.merge_into_work(master, [b])
+        result = bot.merge_docs(master=master, duplicates=[b])
         assert(result['title'] == 'The Work')
         assert(result['covers'] == [1, 2, 3, 4])
 
@@ -32,7 +32,7 @@ class TestCatharbot:
         master = { 'identifiers': { 'foo': [1, 2], 'bar': ['A'] } }
         dupe   = { 'identifiers': { 'foo': [3, 4], 'bar': ['B'], 'baz': ['C'] } }
 
-        result = bot.merge_into_work(master, [dupe])
+        result = bot.merge_docs(master=master, duplicates=[dupe])
         assert(result['identifiers'] == {'foo': [1, 2, 3, 4], 'bar': ['A', 'B'], 'baz': ['C'] })
 
     def xtest_live_work_merge(self, bot):

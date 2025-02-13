@@ -47,12 +47,12 @@ def full_merge(**kwargs):
     duplicates = kwargs.setdefault('duplicates', [])
     if 'duplicate' in kwargs:
         duplicates.append(kwargs['duplicate'])
-    #print "Merge %s into %s" % (duplicates, master)
+    #print("Merge %s into %s" % (duplicates, master))
     master_edition = bot.load_doc(master)
     dupe_editions = [ bot.load_doc(e) for e in duplicates ]
     changeset = []
     if not simple:
-        merged_edition = bot.merge_into_work(master_edition, dupe_editions)
+        merged_edition = bot.merge_docs(master=master_edition, duplicates=dupe_editions)
         changeset.append(merged_edition)
     # are there extra works to merge?
     master_w_olid = extract_olid(master_edition['works'][0]['key'])
@@ -61,7 +61,7 @@ def full_merge(**kwargs):
         master_work = bot.load_doc(master_w_olid)
         dupe_works  = [ bot.load_doc(w) for w in dupe_w_olids ]
         if not simple:
-            merged_work = bot.merge_into_work(master_work, dupe_works)
+            merged_work = bot.merge_docs(master=master_work, duplicates=dupe_works)
             changeset.append(merged_work)
         changeset += bot.merge_works(dupe_w_olids, master_w_olid)
         # remove reassigned duplicate editions from changeset that will be made into redirects
